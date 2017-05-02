@@ -5,69 +5,72 @@ package org.nlogo.parse
 import org.nlogo.core.{ Expression, SourceLocation, Token, TokenType }
 
 object DelayedBlock {
-  def apply(openBracket: Token, unterminatedTokens: Seq[Token], scope: SymbolTable): DelayedBlock = {
-    ArrowLambdaScoper(openBracket +: unterminatedTokens, scope) match {
+  def apply(group: BracketGroup, scope: SymbolTable): DelayedBlock = {
+    ArrowLambdaScoper(group, scope) match {
       case Some((args, body, symbols)) =>
-        new ArrowLambdaBlock(openBracket, args, body, unterminatedTokens.last, openBracket +: unterminatedTokens :+ Token.Eof, symbols)
+        new ArrowLambdaBlock(group, args, body, symbols, group.start.copy(end = group.end.end))
       case None =>
-        new AmbiguousDelayedBlock(openBracket, unterminatedTokens, scope)
+        new AmbiguousDelayedBlock(group, scope)
     }
   }
 }
 
 trait DelayedBlock extends Expression {
-  def openBracket: Token
-  def reportedType = throw new UnsupportedOperationException
-  def tokens: Seq[Token]
-  def isCommand: Boolean
+  def group: BracketGroup
+  def openBracket:   Token
+  def tokens:        Seq[Token]
+  def isCommand:     Boolean
   def isArrowLambda: Boolean
   def internalScope: SymbolTable
+  def bodyGroups:    Seq[SyntaxGroup]
+  def reportedType = throw new UnsupportedOperationException
 }
 
 class ArrowLambdaBlock(
-  val openBracket: Token,
+  val group: BracketGroup,
   val argNames: Seq[String],
-  val bodyTokens: Seq[Token],
-  closingBracket: Token,
-  val allTokens: Seq[Token],
+  val bodyGroups: Seq[SyntaxGroup],
   val internalScope: SymbolTable,
   val sourceLocation: SourceLocation) extends DelayedBlock {
+    def openBracket = group.open
 
-  def this(openBracket: Token, argNames: Seq[String], bodyTokens: Seq[Token], closingBracket: Token, allTokens: Seq[Token], internalScope: SymbolTable) =
-      this(openBracket, argNames, bodyTokens, closingBracket,
-        allTokens, internalScope,openBracket.sourceLocation.copy(end = closingBracket.end))
+    def allTokens = group.allTokens
 
-  val isArrowLambda = true
+    val isArrowLambda = true
 
-  lazy val tokens = (openBracket +: bodyTokens :+ closingBracket) :+ Token.Eof
+    lazy val tokens = allTokens :+ Token.Eof
 
-  override def isCommand = bodyTokens
+    // TODO: Needs group-aware rewrite
+  override def isCommand = bodyGroups.flatMap(_.allTokens)
     .dropWhile(_.tpe == TokenType.OpenParen).headOption
     .map(_.tpe == TokenType.Command).getOrElse(true)
 
   override def changeLocation(newLocation: SourceLocation): ArrowLambdaBlock =
-    new ArrowLambdaBlock(openBracket, argNames, bodyTokens, closingBracket, allTokens, internalScope, newLocation)
+    new ArrowLambdaBlock(group, argNames, bodyGroups, internalScope, newLocation)
 }
 
 /**
  * represents a block whose contents we have not yet parsed. Since correctly parsing a block required
  * knowing its expected type, we have to do it in two passes. It will eventually be resolved into
  * an ReporterBlock, CommandBlock or a literal list. */
-class AmbiguousDelayedBlock(val openBracket: Token, unterminatedTokens: Seq[Token], val internalScope: SymbolTable, val sourceLocation: SourceLocation)
+class AmbiguousDelayedBlock(val group: BracketGroup, val internalScope: SymbolTable, val sourceLocation: SourceLocation)
   extends DelayedBlock {
-    def this(openBracket: Token, unterminatedTokens: Seq[Token], internalScope: SymbolTable) =
-      this(openBracket, unterminatedTokens, internalScope,
-        openBracket.sourceLocation.copy(end = unterminatedTokens.lastOption.map(_.end) getOrElse openBracket.end))
 
-  lazy val tokens = openBracket +: unterminatedTokens :+ Token.Eof
+    def this(group: BracketGroup, internalScope: SymbolTable) = this(group, internalScope, group.location)
+
+    def bodyGroups = group.innerGroups
+
+  def openBracket = group.open
+
+  lazy val tokens = group.allTokens :+ Token.Eof
 
   lazy val isCommand =
-    unterminatedTokens.dropWhile(_.tpe == TokenType.OpenParen)
+    tokens.drop(1).dropWhile(_.tpe == TokenType.OpenParen)
       .headOption
       .exists(t => t.tpe == TokenType.Command || t.tpe == TokenType.CloseBracket)
 
   lazy val isArrowLambda = false
 
   override def changeLocation(newLocation: SourceLocation): AmbiguousDelayedBlock =
-    new AmbiguousDelayedBlock(openBracket, unterminatedTokens, internalScope, newLocation)
+    new AmbiguousDelayedBlock(group, internalScope, newLocation)
 }

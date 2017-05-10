@@ -387,7 +387,7 @@ case class _reporterlambda(argumentNames: Seq[String], synthetic: Boolean, close
   def this(arguments: Seq[String], synthetic: Boolean) = this(arguments, synthetic, Set())
   override def syntax = {
     Syntax.reporterSyntax(
-      right = List(Syntax.CodeBlockType, Syntax.ReporterType),
+      right = List(Syntax.ReporterType),
       ret = Syntax.ReporterType)
   }
 

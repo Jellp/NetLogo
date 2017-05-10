@@ -9,7 +9,7 @@ import scala.annotation.tailrec
 
 object ArrowLambdaScoper {
   // returns args, body groups, symbol table. Body groups does not include arrow token
-  def apply(group: BracketGroup, usedNames: SymbolTable): Option[(Seq[String], Seq[SyntaxGroup], SymbolTable)] = {
+  def apply(group: BracketGroup, usedNames: SymbolTable): Option[(Seq[Token], Seq[SyntaxGroup], SymbolTable)] = {
     val containsArrow =
       group.innerGroups.exists {
         case Atom(t) if t.text == "->" => true
@@ -19,7 +19,8 @@ object ArrowLambdaScoper {
     if (containsArrow) {
         gatherArguments(group, usedNames).map {
           case (args, remainder, syms) =>
-            val body = remainder.map(traverseAndReplace(args, syms))
+            val argNames = args.map(_.text.toUpperCase)
+            val body = remainder.map(traverseAndReplace(argNames, syms))
             (args, body, syms)
         }
     } else None
@@ -35,7 +36,7 @@ object ArrowLambdaScoper {
     }
   }
 
-  def gatherArguments(group: BracketGroup, usedNames: SymbolTable): Option[(Seq[String], Seq[SyntaxGroup], SymbolTable)] = {
+  def gatherArguments(group: BracketGroup, usedNames: SymbolTable): Option[(Seq[Token], Seq[SyntaxGroup], SymbolTable)] = {
     implicit class RichToken(t: Token) {
       def isArrow = t.text == "->"
       def isOpenBracket = t.tpe == TokenType.OpenBracket
@@ -45,20 +46,20 @@ object ArrowLambdaScoper {
         usedNames.contains(t.text.toUpperCase) && ! t.value.isInstanceOf[LambdaTokenMapper._taskvariable]
     }
 
-    def gatherBracketedArguments(argGroups: Seq[SyntaxGroup]): (Seq[String], SymbolTable) = {
-      argGroups.foldLeft((Seq.empty[String], usedNames)) {
+    def gatherBracketedArguments(argGroups: Seq[SyntaxGroup]): (Seq[Token], SymbolTable) = {
+      argGroups.foldLeft((Seq.empty[Token], usedNames)) {
         case ((args, syms), Atom(t)) => gatherSingleArgument(t, syms, args)
         case ((args, syms), other)   => exception(ExpectedVarName, other.start)
       }
     }
 
-    def gatherSingleArgument(t: Token, scope: SymbolTable, others: Seq[String] = Seq()): (Seq[String], SymbolTable) = {
+    def gatherSingleArgument(t: Token, scope: SymbolTable, others: Seq[Token] = Seq()): (Seq[Token], SymbolTable) = {
       if (t.isAlreadyDefined(scope))
         SymbolType.alreadyDefinedException(scope(t.text.toUpperCase), t)
       else if (t.isArrow)
         exception(ExpectedVarName, t)
       else if (t.tpe == TokenType.Ident || t.value.isInstanceOf[_unknownidentifier])
-        (others :+ t.text.toUpperCase, scope.addSymbol(t.text.toUpperCase, SymbolType.LambdaVariable))
+        (others :+ t, scope.addSymbol(t.text.toUpperCase, SymbolType.LambdaVariable))
       else
         exception(ExpectedVarName, t)
     }

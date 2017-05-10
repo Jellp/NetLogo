@@ -29,10 +29,11 @@ trait DelayedBlock extends Expression {
 
 class ArrowLambdaBlock(
   val group: BracketGroup,
-  val argNames: Seq[String],
+  val argTokens: Seq[Token],
   val bodyGroups: Seq[SyntaxGroup],
   val internalScope: SymbolTable,
   val sourceLocation: SourceLocation) extends DelayedBlock {
+    val argNames: Seq[String] = argTokens.map(_.text.toUpperCase)
     def openBracket = group.open
 
     def allTokens = group.allTokens
@@ -47,7 +48,7 @@ class ArrowLambdaBlock(
     .map(_.tpe == TokenType.Command).getOrElse(true)
 
   override def changeLocation(newLocation: SourceLocation): ArrowLambdaBlock =
-    new ArrowLambdaBlock(group, argNames, bodyGroups, internalScope, newLocation)
+    new ArrowLambdaBlock(group, argTokens, bodyGroups, internalScope, newLocation)
 
   def toLambda: ArrowLambdaBlock = this
 }
@@ -78,5 +79,5 @@ class AmbiguousDelayedBlock(val group: BracketGroup, val internalScope: SymbolTa
     new AmbiguousDelayedBlock(group, internalScope, newLocation)
 
   def toLambda: ArrowLambdaBlock =
-    new ArrowLambdaBlock(group, Seq.empty[String], bodyGroups, internalScope, sourceLocation)
+    new ArrowLambdaBlock(group, Seq.empty[Token], bodyGroups, internalScope, sourceLocation)
 }

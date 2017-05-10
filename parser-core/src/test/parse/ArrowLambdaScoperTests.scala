@@ -86,7 +86,7 @@ class ArrowLambdaScoperTests extends FunSuite {
     "MEAN" -> SymbolType.PrimitiveReporter,
     "BAR"  -> SymbolType.GlobalVariable)
 
-  def scope(ts: Seq[Token], otherSymbols: SymbolTable = SymbolTable.empty): Option[(Seq[String], Seq[SyntaxGroup], SymbolTable)] = {
+  def scope(ts: Seq[Token], otherSymbols: SymbolTable = SymbolTable.empty): Option[(Seq[Token], Seq[SyntaxGroup], SymbolTable)] = {
     val groups = ExpressionParser.groupSyntax(ts.iterator.buffered).get.head.asInstanceOf[BracketGroup]
     ArrowLambdaScoper(groups, testSymbols ++ otherSymbols)
   }
@@ -96,7 +96,7 @@ class ArrowLambdaScoperTests extends FunSuite {
     assert(res.isDefined)
     res.foreach {
       case (args, body, symbols) =>
-        assertResult(expectedArgs)(args)
+        assertResult(expectedArgs)(args.map(_.text.toUpperCase))
         assertResult(expectedBody)(body)
         expectedSymbols.foreach {
           case (key, symType) =>

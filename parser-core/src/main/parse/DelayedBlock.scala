@@ -24,6 +24,7 @@ trait DelayedBlock extends Expression {
   def internalScope: SymbolTable
   def bodyGroups:    Seq[SyntaxGroup]
   def reportedType = throw new UnsupportedOperationException
+  def toLambda: ArrowLambdaBlock
 }
 
 class ArrowLambdaBlock(
@@ -47,6 +48,8 @@ class ArrowLambdaBlock(
 
   override def changeLocation(newLocation: SourceLocation): ArrowLambdaBlock =
     new ArrowLambdaBlock(group, argNames, bodyGroups, internalScope, newLocation)
+
+  def toLambda: ArrowLambdaBlock = this
 }
 
 /**
@@ -73,4 +76,7 @@ class AmbiguousDelayedBlock(val group: BracketGroup, val internalScope: SymbolTa
 
   override def changeLocation(newLocation: SourceLocation): AmbiguousDelayedBlock =
     new AmbiguousDelayedBlock(group, internalScope, newLocation)
+
+  def toLambda: ArrowLambdaBlock =
+    new ArrowLambdaBlock(group, Seq.empty[String], bodyGroups, internalScope, sourceLocation)
 }

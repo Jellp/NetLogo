@@ -463,12 +463,16 @@ object ExpressionParser {
       processReporterLambda(block.asInstanceOf[ArrowLambdaBlock], scope) // TODO: switch this to a `case`?
     else if (block.isArrowLambda)
       processCommandLambda(block.asInstanceOf[ArrowLambdaBlock], scope) // TODO: switch this to a `case`?
-    else if (compatible(goalType, Syntax.ListType))
-      processLiteralList(block)
     else if (compatible(goalType, Syntax.ReporterBlockType))
       processReporterBlock(block, scope)
     else if (compatible(goalType, Syntax.CommandBlockType))
       processCommandBlock(block, scope)
+    else if (compatible(goalType, Syntax.ListType))
+      processLiteralList(block)
+    else if (compatible(goalType, Syntax.ReporterType) && !block.isCommand)
+      processReporterLambda(block.toLambda, scope)
+    else if (compatible(goalType, Syntax.CommandType) && block.isCommand)
+      processCommandLambda(block.toLambda, scope)
     else
       PartialError(fail(s"Expected ${core.TypeNames.aName(goalType)} here, rather than a list or block.", block))
   }

@@ -7,7 +7,7 @@ package org.nlogo.compile
 // big exception to that principle, though, which is that the ExtensionManager gets side-effected in
 // StructureParser. - ST 2/21/08, 1/21/09
 
-import org.nlogo.api.{ ExtensionManager, Version }
+import org.nlogo.api.{ ExtensionManager, NetLogoThreeDDialect, Version }
 import org.nlogo.compile.api.{ Backifier => BackifierInterface, CommandMunger, DefaultAstVisitor,
   FrontMiddleBridgeInterface, MiddleEndInterface, Optimizations, ProcedureDefinition, ReporterMunger }
 import org.nlogo.core.{ Dialect, Program }
@@ -88,9 +88,10 @@ private object CompilerMain {
           .map(opt => s"org.nlogo.compile.middle.optimize.$opt")
           .map(className => Femto.scalaSingleton[CommandMunger](className))
       val reporterOpts =
-        Seq("PatchAt", "With", "OneOfWith", "Nsum", "Nsum4", "CountWith", "OtherWith",
+        (Seq("PatchAt", "OneOfWith", "Nsum", "Nsum4", "CountWith", "OtherWith",
           "WithOther", "AnyOther", "AnyOtherWith", "CountOther", "CountOtherWith", "AnyWith1",
-          "AnyWith2", "AnyWith3", "AnyWith4", "AnyWith5", "RandomConst")
+          "AnyWith2", "AnyWith3", "AnyWith4", "AnyWith5", "RandomConst") ++
+          (if (dialect != NetLogoThreeDDialect) Seq("With") else Seq()))
           .map(opt => s"org.nlogo.compile.middle.optimize.$opt")
           .map(className => Femto.scalaSingleton[ReporterMunger](className))
       val netLogoSpecificOptimizations =

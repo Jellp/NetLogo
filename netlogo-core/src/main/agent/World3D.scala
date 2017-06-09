@@ -33,7 +33,9 @@ class World3D extends World
         new Link3D(world, src, dest, breed)
     })
 
-  override val tieManager: TieManager3D = new TieManager3D(this, linkManager)
+  protected val _links: TreeAgentSet = new TreeAgentSet(AgentKind.Link, "LINKS")
+
+  override val tieManager: TieManager3D = new TieManager3D(_links, linkManager, protractor)
   val inRadiusOrCone = new InRadiusOrCone3D(this)
 
   _mayHavePartiallyTransparentObjects = false;
@@ -214,7 +216,6 @@ class World3D extends World
     if (_links != null) {
       _links.clear() // so a SimpleChangeEvent is published
     }
-    _links = new TreeAgentSet(AgentKind.Link, "LINKS")
 
     var x = _minPxcor;
     var y = _maxPycor;

@@ -8,7 +8,7 @@ import
   org.nlogo.api.{ AgentException, Numbers },
     Numbers.Infinitesimal
 
-class TieManager(private val world: World, linkManager: LinkManager) {
+class TieManager(links: TreeAgentSet, linkManager: LinkManager, protractor: Protractor) {
 
   private var tieCount = 0
 
@@ -26,7 +26,7 @@ class TieManager(private val world: World, linkManager: LinkManager) {
   }
 
   protected def tiedTurtles(root: Turtle, seenTurtles: Set[Turtle]): Seq[Turtle] = {
-    val tiedTurtles = linkManager.outLinks(root, world.links).collect {
+    val tiedTurtles = linkManager.outLinks(root, links).collect {
       case link if link.isTied => link.otherEnd(root)
     }
     tiedTurtles.filterNot(t => t.id == -1 || seenTurtles(t)).toSeq.distinct
@@ -53,7 +53,7 @@ class TieManager(private val world: World, linkManager: LinkManager) {
 
   private[agent] def turtleTurned(root: Turtle, newHeading: Double, oldHeading: Double, seenTurtles: Set[Turtle]) {
 
-    val isLinkedFixedly = (t: Turtle) => linkManager.linksTo(root, t, world.links)
+    val isLinkedFixedly = (t: Turtle) => linkManager.linksTo(root, t, links)
                                                           .find( _.mode == Link.MODE_FIXED)
                                                           .nonEmpty
     val getCoords       = (t: Turtle) => (t.xcor(), t.ycor())
@@ -71,9 +71,9 @@ class TieManager(private val world: World, linkManager: LinkManager) {
 
         val wentBoom =
           try {
-            val r = world.protractor.distance(root, t, true)
+            val r = protractor.distance(root, t, true)
             if (r != 0) {
-              val theta = world.protractor.towards(root, t, true) + dh
+              val theta = protractor.towards(root, t, true) + dh
               val newX2 = x + r * squashedSin(theta)
               val newY2 = y + r * squashedCos(theta)
               t.xandycor(newX2, newY2, allSeenTurtles)

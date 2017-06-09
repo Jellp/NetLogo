@@ -132,7 +132,7 @@ public strictfp abstract class Turtle
   abstract void drawLine(double x0, double y0, double x1, double y1);
   abstract Turtle makeTurtle(World world);
 
-  public Turtle hatch(AgentSet breed) {
+  public Turtle hatch(TreeAgentSet breed) {
     Turtle child = makeTurtle(_world);
     child.heading = heading;
     child.xcor = xcor;
@@ -144,7 +144,7 @@ public strictfp abstract class Turtle
       child.setBreed(breed);
     }
     if (breed != _world.turtles()) {
-      ((TreeAgentSet) breed).add(child);
+      breed.add(child);
     }
     child.getPatchHere().addTurtle(child);
     return child;
@@ -1019,8 +1019,8 @@ public strictfp abstract class Turtle
     variables()[valueIndex] = rgb;
   }
 
-  public AgentSet getBreed() {
-    return (AgentSet) variables()[VAR_BREED];
+  public TreeAgentSet getBreed() {
+    return (TreeAgentSet) variables()[VAR_BREED];
   }
 
   // returns the index of the breed of this turtle, 0 means just a turtle

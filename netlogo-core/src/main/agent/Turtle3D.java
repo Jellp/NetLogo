@@ -118,8 +118,8 @@ public final strictfp class Turtle3D
     child.setVariables(_variables.clone());
     child.setId(_world.newTurtleId());
     _world.turtles().add(child);
-    if (breed != _world.turtles()) {
-      ((TreeAgentSet) breed).add(child);
+    if (getBreed() != _world.turtles()) {
+      getBreed().add(child);
     }
     child.getPatchHere().addTurtle(child);
     return child;
@@ -986,8 +986,8 @@ public final strictfp class Turtle3D
   }
 
   @Override
-  public AgentSet getBreed() {
-    return (AgentSet) variables()[VAR_BREED3D];
+  public TreeAgentSet getBreed() {
+    return (TreeAgentSet) variables()[VAR_BREED3D];
   }
 
   /**

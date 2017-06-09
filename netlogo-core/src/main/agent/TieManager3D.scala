@@ -8,7 +8,8 @@ import java.util.{ Arrays, HashSet, Iterator => JIterator, List => JList, Set =>
 
 import scala.collection.JavaConverters._
 
-class TieManager3D(world3D: World3D, linkManager: LinkManager) extends TieManager(world3D, linkManager) {
+class TieManager3D(links: TreeAgentSet, linkManager: LinkManager, protractor: Protractor3D)
+  extends TieManager(links, linkManager, protractor) {
 
   // the set of turtles we are updating
   private var seenTurtles: Set[Turtle3D] = Set.empty[Turtle3D]
@@ -51,7 +52,7 @@ class TieManager3D(world3D: World3D, linkManager: LinkManager) extends TieManage
   }
 
   protected def tiedTurtles3d(root: Turtle, seenTurtles: Set[Turtle3D]): Seq[Turtle3D] = {
-    world3D.linkManager.outLinks(root, world3D.links).collect {
+    linkManager.outLinks(root, links).collect {
       case link if link.isTied => link.otherEnd(root)
     }.collect {
       case t: Turtle3D if t.id != -1 && ! seenTurtles.contains(t) => t
@@ -100,13 +101,13 @@ class TieManager3D(world3D: World3D, linkManager: LinkManager) extends TieManage
         myTies.foreach { (t: Turtle3D) =>
           try {
             val rigid =
-              Arrays.stream(world3D.linkManager.linksWith(root, t, world3D.links))
+              Arrays.stream(linkManager.linksWith(root, t, links))
                 .anyMatch(l => l.mode == Link.MODE_FIXED)
 
             // In order to get wrapping and line drawing to work properly
             // we have to compute our transform in coordinates relative to the
             // root turtle -- CLB 05/11/06
-            val leaf = world3D.protractor.asInstanceOf[Protractor3D].towardsVector(
+            val leaf = protractor.towardsVector(
               root.xcor(), root.ycor(), root.zcor(),
               t.xcor(),    t.ycor(),    t.zcor(), true)
             htrans.transform(leaf, out, 1)

@@ -91,7 +91,7 @@ trait CoreWorld
     private[agent] var _patches: IndexedAgentSet = null
     def patches: IndexedAgentSet = _patches
 
-    protected var _links: TreeAgentSet = null;
+    protected val _links: TreeAgentSet;
     def links: TreeAgentSet = _links
 
     private[agent] var _topology: Topology = _
@@ -145,7 +145,9 @@ class World2D extends World with CompilationManagement {
           new Link(world, src, dest, breed)
         }
       })
-  val tieManager: TieManager = new TieManager(this, linkManager)
+  protected val _links: TreeAgentSet = new TreeAgentSet(AgentKind.Link, "LINKS")
+
+  val tieManager: TieManager = new TieManager(_links, linkManager, protractor)
 
   protected val dimensionVariableNames =
     Seq("MIN-PXCOR", "MAX-PXCOR", "MIN-PYCOR", "MAX-PYCOR", "WORLD-WIDTH", "WORLD-HEIGHT")
@@ -305,7 +307,6 @@ class World2D extends World with CompilationManagement {
     if (_links != null) {
       _links.clear() // so a SimpleChangeEvent is published
     }
-    _links = new TreeAgentSet(AgentKind.Link, "LINKS")
 
     val patchArray = new Array[Agent](_worldWidth * _worldHeight)
     _patchColors = new Array[Int](_worldWidth * _worldHeight)
